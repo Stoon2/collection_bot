@@ -28,7 +28,7 @@ Extensive use of the py-telegram-bot API wrapper was used to simplify interactin
 did not have to code too much of our own logic into handling JSON files and their respective inputs or tags.
 
 """
-
+import os
 import logging
 import pickle
 import config
@@ -59,7 +59,6 @@ file_name_nba = 'nba_dict.txt'
 # Function that begins our conversation
 def start(update, context):
     reply_keyboard = [['Submit iCase', 'Submit NBA'], ['Closure']]  # This way shows closure in its own row
-
     update.message.reply_text(
         'Hi! Please choose your task. '
         'Send /cancel to stop talking to me.\n\n',
@@ -74,7 +73,6 @@ def start(update, context):
 def task(update, context):
     logger.info(update.message.text + ' in task function')
     reply_keyboard = [['Closure iCase', 'Closure NBA']]
-
     # If user wants the closure of the day, we access the CLOSURE state and send a one-time KB to query NBA or iCase
     if update.message.text == 'Closure':
         logger.info('IN CLOSURE')
