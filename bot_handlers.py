@@ -28,7 +28,7 @@ Extensive use of the py-telegram-bot API wrapper was used to simplify interactin
 did not have to code too much of our own logic into handling JSON files and their respective inputs or tags.
 
 """
-import os
+
 import logging
 import pickle
 import config
