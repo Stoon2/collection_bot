@@ -1,7 +1,14 @@
 import pymongo
 import config
 import datetime
+import logging
 from pymongo import MongoClient
+
+# Enable logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 class User:
 
@@ -33,8 +40,8 @@ class User:
 
 
     def submit(self, type): # Note to self, let return be 
-        print(type)
         
+        logger.info("Currently submitting a case of type: " + type)
 
         if(type == "icase_bot"):
             collection = self.db["icase_bot"]
@@ -47,5 +54,4 @@ class User:
             return
         else:
             print("Something went wrong with inserting your data. Please check class User.")
-            # print(request_template)
             return
