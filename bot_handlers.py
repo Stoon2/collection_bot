@@ -36,8 +36,10 @@ import config
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler)
+from user import User
+from pymongo.mongo_client import MongoClient
 
-TOKEN = config.API_TOKEN
+TOKEN = config.TELEGRAM_API_TOKEN
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -47,14 +49,6 @@ logger = logging.getLogger(__name__)
 
 # Announcing states and assigning values
 TASK, VALUE_ICASE, VALUE_NBA, CLOSURE = range(4)
-
-# dictionaries to store data for tasks
-icase_dict = dict()
-nba_dict = dict()
-
-file_name_icase = 'icase_dict.txt'
-file_name_nba = 'nba_dict.txt'
-
 
 # Function that begins our conversation
 def start(update, context):
@@ -108,8 +102,10 @@ def value_icase(update, context):
     logger.info("ID: %s Name: %s %s, tasks: %s", user.id, user.first_name, user.last_name, update.message.text)
     update.message.reply_text('Awesome, thank you for the submission. Make sure you call em back ' + "\U000023F0",
                               reply_markup=ReplyKeyboardRemove())
-    icase_dict[user.id] = user.first_name + ' ' + user.last_name + ' : ' + update.message.text
-    write_dict(icase_dict, file_name_icase)
+
+    user_crud = User(update.message)
+    user_crud.submit("icase_bot")
+
     return ConversationHandler.END
 
 
@@ -123,8 +119,10 @@ def value_nba(update, context):
     logger.info("ID: %s Name: %s %s, tasks: %s", user.id, user.first_name, user.last_name, update.message.text)
     update.message.reply_text('Awesome, thank you for the NBA submission. Keep that money rolling ' + "\U0001F911!",
                               reply_markup=ReplyKeyboardRemove())
-    nba_dict[user.id] = user.first_name + ' ' + user.last_name + ' : ' + update.message.text
-    write_dict(nba_dict, file_name_nba)
+                              
+    user_crud = User(update.message)
+    user_crud.submit("nba_bot")
+
     return ConversationHandler.END
 
 
@@ -136,25 +134,45 @@ def value_nba(update, context):
 def closure(update, context):
     logger.info('in closure function')
     user = update.message.from_user
+    client = MongoClient(config.MONGO_DB_TOKEN)
+    db = client.big_team # AFTER THE CLIENT OBJECT DOT, TYPE THE NAME OF YOUR DATABASE!!!
 
     update.message.reply_text('Working on your request...', reply_markup=ReplyKeyboardRemove())
 
     if update.message.text == 'Closure NBA':
-        logger.info("User: %s Name: %s %s, submitted #%s NBA", user.id, user.first_name, user.last_name,
+        # Switch current collection to NBA collection
+        collection_name = "nba_bot"
+        collection = db[collection_name]
+
+        logger.info("User: %s Name: %s %s, submitted #%s", user.id, user.first_name, user.last_name,
                     update.message.text)
         update.message.reply_text('Collecting NBA...', reply_markup=ReplyKeyboardRemove())
-        nba_collect_summary = 'NBA Summary: ' + '\n'
-        update.message.reply_text(str(read_dict(file_name_nba, nba_collect_summary)))
+        
+        # calling function to concat string result
+        nba_collect_summary = 'NBA Summary for: ' + str(update.message.chat.title) +'\n'
+        nba_collect_summary = read_record(update, collection, nba_collect_summary) 
+        
+        # send string back to user
+        update.message.reply_text(nba_collect_summary)
+
         return ConversationHandler.END
 
     elif update.message.text == 'Closure iCase':
+        # Switch to iCase collection
+        collection_name = "icase_bot"
+        collection = db[collection_name]
 
-        logger.info("User: %s Name: %s %s, submitted #%s iCases", user.id, user.first_name, user.last_name,
+        logger.info("User: %s Name: %s %s, submitted #%s", user.id, user.first_name, user.last_name,
                     update.message.text)
-        icase_collect_summary = 'iCase Summary: ' + '\n'
         update.message.reply_text('Collecting iCase...', reply_markup=ReplyKeyboardRemove())
-        update.message.reply_text(str(read_dict(file_name_icase, icase_collect_summary)))
-
+        
+        # calling function to concat string result
+        icase_collect_summary = 'iCase Summary for: ' + str(update.message.chat.title) +'\n'
+        icase_collect_summary = read_record(update, collection, icase_collect_summary)
+        
+        # send string back to user
+        update.message.reply_text(icase_collect_summary)
+        
         return ConversationHandler.END
 
     else:
@@ -163,24 +181,12 @@ def closure(update, context):
         return CLOSURE
 
 
-# Simple function so we reuse code, simply writes a dictionary using py pickeles to read at a later time
-def write_dict(input_dict, file_name):
-    try:
-        with open(file_name, 'wb') as handle:  # saves dictionary in external file to keep data persistent
-            pickle.dump(input_dict, handle)
-    except Exception as e:
-        print(e)
-        pass
-
-
 # Simple function so we can read the state of a given file of a dictionary. Read the states out and return a total
 # with the value of the rows line by line
-def read_dict(file_name, task_string):
-    with open(file_name, 'rb') as handle:  # reads dictionary in external file
-        saved_dict = pickle.loads(handle.read())
-    for key, value in saved_dict.items():  # aligns data row by row in a single string to construct a message
-        task_string = task_string + value + '\n'
-
+def read_record(update, collection, task_string):
+    for result in collection.find({}):
+            if(update.message.chat.title == result["group_name"]):
+                task_string = task_string + result["user_name"] + ": " + result["user_content"]
     return task_string
 
 
