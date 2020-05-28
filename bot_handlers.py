@@ -186,7 +186,7 @@ def closure(update, context):
 def read_record(update, collection, task_string):
     for result in collection.find({}):
             if(update.message.chat.title == result["group_name"]):
-                task_string = task_string + result["user_name"] + ": " + result["user_content"]
+                task_string = task_string + result["user_name"] + ": " + result["user_content"] + '\n'
     return task_string
 
 
@@ -219,6 +219,18 @@ def help(update, context):
     update.message.reply_text('To start using the bot, please enter /start. \n'
                               'To cancel at any point, please enter /cancel to exit the bot. \n'
                               'Make sure you read the bot\'s  messages carefully as it won\'t accept incorrect input')
+
+def new_member(update, context):
+    # print(update.message.new_chat_members[0]["first_name"])
+    update.message.reply_text("Welcome ya: " + update.message.new_chat_members[0]["first_name"])
+    user_crud = User(update.message)
+    user_crud.new_member()
+
+def leave_member(update, context):
+    print("This is the thing ID thingy: " + str(update.message.left_chat_member["id"]))
+    update.message.reply_text("I crai, bye ya: " + update.message.left_chat_member["first_name"])
+    user_crud = User(update.message)
+    user_crud.remove_member()
 
 
 def main():
@@ -253,6 +265,9 @@ def main():
     # Add help command handler
     updater.dispatcher.add_handler(CommandHandler('help', help))
 
+    # Add MessageHandler
+    updater.dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, new_member))
+    updater.dispatcher.add_handler(MessageHandler(Filters.status_update.left_chat_member, leave_member))
     # Log all errors
     dp.add_error_handler(error)
 
