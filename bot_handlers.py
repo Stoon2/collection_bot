@@ -4,21 +4,10 @@
 """
 
 This is a simple passion project to automate and simplify some processes that are currently manually done by
-advisers at Vodafone UK Cairo, Egypt in Sixth Horizon branch who have more than enough on their plate.
-Main credit goes to Team Karim Wael for their incredible support.
+advisers at work by my colleagues who have more than enough on their plate.
+Main credit goes to my Team Manager for their incredible support.
 
-Credit to everyone who assisted with testing:
-
-Ibrahim Meshref
-
-Amira Elsayed
-
-Reem Sherif
-
-Kamal Tarek
-
-and TM Karim Wael
-
+Credit to everyone who assisted with testing. Your help is more than appreciated.
 Couldn't have done it without you guys! Cheers :D
 
 
